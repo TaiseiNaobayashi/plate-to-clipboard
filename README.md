@@ -1,7 +1,7 @@
 # plate-to-clipboard
 
-プレートリーダー (BioTek Gen5 / Synergy HTX) が出力した xlsx から 96 ウェルの値を探し出し、
-TSV 形式でクリップボードにコピーする Windows 用ツール。
+A Windows tool that finds the 96-well values in an xlsx exported by a plate reader
+(BioTek Gen5 / Synergy HTX) and copies them to the clipboard as TSV.
 
 ```
 A1	0.035
@@ -10,23 +10,23 @@ A2	0.07
 H12	0.11
 ```
 
-1 ファイルに複数プレートがある場合は、ウェルごとにプレートを横に並べ、見出し行を付ける。
+If one file contains several plates, each plate gets its own column next to the well names, with a header row.
 
 ```
 Well	Plate 1 - Sheet1	Plate 2 - Sheet1
 A1	0.035	0.105
 ```
 
-## 使い方
+## Usage
 
-- ウィンドウに xlsx をドラッグ&ドロップ(またはクリックして選択)
-- exe に xlsx を直接ドラッグ&ドロップしてもよい
-- ウィンドウに今クリップボードに入っているファイル名と履歴が表示される(履歴はダブルクリックで再コピー)
+- Drag & drop an xlsx onto the window (or click it to choose a file)
+- You can also drop an xlsx directly onto the exe
+- The window shows which file is currently on the clipboard, plus a history (double-click an entry to copy it again)
 
-全シートから「1〜12 の列見出し + その左列に A〜H の行見出し」がある領域を探すので、
-結果の行位置がずれていても動く。
+The tool searches every sheet for a block with column headers 1–12 and row labels A–H in the column to their left,
+so it still works when the results start on a different row.
 
-## ビルド
+## Build
 
 ```bash
 pip install openpyxl tkinterdnd2 pyinstaller

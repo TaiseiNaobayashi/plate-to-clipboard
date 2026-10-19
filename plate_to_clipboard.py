@@ -1,9 +1,9 @@
-"""プレートリーダー(Gen5)出力xlsxから96ウェルの値を探し、
-"A1<TAB>値" 形式で縦一列に並べてクリップボードへ送る。
+"""Find the 96-well values in a plate reader (Gen5) xlsx export and copy them
+to the clipboard as a single column of "A1<TAB>value" lines.
 
-使い方:
-  - ウィンドウに xlsx をドラッグ&ドロップ、またはクリックして選択
-  - exe / .py に xlsx をドラッグ&ドロップしても、ウィンドウが開いてコピーされる
+Usage:
+  - Drag & drop an xlsx onto the window, or click it to choose a file
+  - Dropping an xlsx onto the exe / .py also opens the window and copies it
 """
 import ctypes
 import ctypes.wintypes as wt
@@ -20,7 +20,7 @@ COLS = list(range(1, 13))
 
 
 def find_plates(path):
-    """全シートから「1..12 の列見出し + A..H の行見出し」の領域を探して返す。"""
+    """Return every block on any sheet with column headers 1..12 and row labels A..H."""
     wb = openpyxl.load_workbook(path, data_only=True, read_only=True)
     plates = []
     for ws in wb.worksheets:
@@ -29,7 +29,7 @@ def find_plates(path):
             for c in range(len(row) - 11):
                 if [_num(v) for v in row[c:c + 12]] != COLS:
                     continue
-                # 見出し行の下に A..H が並んでいるか(ラベルは見出しの1つ左の列)
+                # Row labels A..H must sit below the header, one column to its left
                 lc = c - 1
                 if lc < 0 or r + 8 >= len(grid):
                     continue
@@ -59,7 +59,7 @@ def _num(v):
 
 
 def to_tsv(plates):
-    """1プレートなら "A1<TAB>値"。複数プレートなら見出し行付きで列を横に並べる。"""
+    """One plate: "A1<TAB>value". Several plates: one column per plate, with a header row."""
     lines = []
     if len(plates) > 1:
         lines.append("\t".join(["Well"] + [title for title, _ in plates]))
@@ -88,11 +88,11 @@ def set_clipboard(text):
     ctypes.memmove(p, data, len(data))
     k32.GlobalUnlock(h)
     if not u32.OpenClipboard(None):
-        raise RuntimeError("クリップボードを開けませんでした")
+        raise RuntimeError("Could not open the clipboard")
     try:
         u32.EmptyClipboard()
         if not u32.SetClipboardData(CF_UNICODETEXT, h):
-            raise RuntimeError("クリップボードへの書き込みに失敗しました")
+            raise RuntimeError("Failed to write to the clipboard")
     finally:
         u32.CloseClipboard()
 
@@ -105,7 +105,7 @@ class App:
         root.minsize(420, 300)
 
         self.drop = tk.Label(
-            root, text="ここに xlsx をドロップ\n(クリックで選択)",
+            root, text="Drop an xlsx file here\n(or click to choose)",
             relief="groove", bd=2, bg="#f4f6fa", fg="#444",
             font=("Yu Gothic UI", 13), cursor="hand2", height=4,
         )
@@ -116,12 +116,12 @@ class App:
             self.drop.drop_target_register(DND_FILES)
             self.drop.dnd_bind("<<Drop>>", self.on_drop)
         except Exception:
-            self.drop.config(text="クリックして xlsx を選択")
+            self.drop.config(text="Click to choose an xlsx file")
 
-        tk.Label(root, text="クリップボードの中身:", anchor="w",
+        tk.Label(root, text="On the clipboard:", anchor="w",
                  font=("Yu Gothic UI", 9)).pack(fill="x", padx=12)
         self.current = tk.Label(
-            root, text="(まだコピーしていません)", anchor="w", justify="left",
+            root, text="(nothing copied yet)", anchor="w", justify="left",
             font=("Yu Gothic UI", 12, "bold"), fg="#888", wraplength=490,
         )
         self.current.pack(fill="x", padx=12)
@@ -129,7 +129,7 @@ class App:
                                font=("Yu Gothic UI", 9), fg="#666", wraplength=490)
         self.detail.pack(fill="x", padx=12, pady=(0, 8))
 
-        tk.Label(root, text="履歴 (ダブルクリックで再コピー):", anchor="w",
+        tk.Label(root, text="History (double-click to copy again):", anchor="w",
                  font=("Yu Gothic UI", 9)).pack(fill="x", padx=12)
         self.history = tk.Listbox(root, font=("Yu Gothic UI", 9), activestyle="none")
         self.history.pack(fill="both", expand=True, padx=12, pady=(0, 12))
@@ -138,7 +138,7 @@ class App:
 
     def choose(self):
         path = filedialog.askopenfilename(
-            title="プレートリーダーのxlsxを選択",
+            title="Choose a plate reader xlsx",
             filetypes=[("Excel", "*.xlsx *.xlsm"), ("All files", "*.*")],
         )
         if path:
@@ -160,16 +160,16 @@ class App:
         try:
             plates = find_plates(path)
             if not plates:
-                raise ValueError("96ウェルの領域が見つかりませんでした")
+                raise ValueError("No 96-well block found")
             set_clipboard(to_tsv(plates))
         except Exception as e:
             self.current.config(text=f"✖ {name}", fg="#c0392b")
-            self.detail.config(text=f"エラー: {e}\n(クリップボードは変更していません)")
+            self.detail.config(text=f"Error: {e}\n(clipboard not changed)")
             return
         now = datetime.now().strftime("%H:%M:%S")
         self.current.config(text=f"📋 {name}", fg="#1a7f37")
         self.detail.config(
-            text=f"{Path(path).parent}\n{len(plates)} プレート × 96 ウェル  ・  {now} にコピー")
+            text=f"{Path(path).parent}\n{len(plates)} plate(s) × 96 wells  ·  copied at {now}")
         self.root.title(f"Plate → Clipboard  [{name}]")
         if path in self.paths:
             idx = self.paths.index(path)
