@@ -32,3 +32,9 @@ so it still works when the results start on a different row.
 pip install openpyxl tkinterdnd2 pyinstaller
 pyinstaller --onefile --noconsole --collect-all tkinterdnd2 plate_to_clipboard.py
 ```
+
+## License
+
+- The source code in this repository is licensed under the [MIT License](LICENSE).
+- The released `.exe` files bundle the Python runtime and third-party libraries (openpyxl, tkinterdnd2/tkdnd, Pillow, NumPy, ...). Their licenses and copyright notices are collected in [THIRD_PARTY_LICENSES.txt](THIRD_PARTY_LICENSES.txt), which is also attached to each release.
+- If you rebuild and redistribute the exe, update `THIRD_PARTY_LICENSES.txt` to match what you bundle and ship it together with the exe.
